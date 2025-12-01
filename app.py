@@ -85,18 +85,27 @@ def get_products(session: Session = Depends(get_session)):
 
 @app.post("/add-products")
 def add_products(session: Session = Depends(get_session)):
+    existing = session.exec(select(Product)).all()
+
+    # If already added → do not duplicate
+    if existing:
+        return {"message": "Products already exist!"}
+
     items = [
         Product(name="Lays", price=55, image="img1.avif"),
         Product(name="Milk", price=40, image="img9.avif"),
         Product(name="Bread", price=45, image="img8.avif"),
-        Product(name="penuts",price=220,image="img5.avif"),
+        Product(name="Peanuts", price=220, image="img5.avif"),
+        Product(name="Butter",price=66, image="img10.avif"),
     ]
-    
+
     for p in items:
         session.add(p)
-    session.commit()
 
-    return {"message": "Products added"}
+    session.commit()
+    return {"message": "Products added successfully!"}
+
+
 
 
 # -------------------------------
@@ -162,3 +171,4 @@ def remove_item(user_id: int, product_id: int, session: Session = Depends(get_se
     session.commit()
 
     return {"message": "Item removed"}
+

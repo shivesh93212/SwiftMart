@@ -1,7 +1,7 @@
 
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "postgresql://postgres:shivesh%402006@localhost:5432/swiftmart"
+DATABASE_URL = "postgresql://postgres:shivesh%402006@localhost:5432/testdb"
 
 engine = create_engine(DATABASE_URL, echo=True)
 
