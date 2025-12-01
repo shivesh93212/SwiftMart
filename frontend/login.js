@@ -12,9 +12,12 @@ document.querySelector("#login-btn").addEventListener("click", () => {
         if (data.token) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("user_id", data.user_id);
+
+            alert("Login successful!");
             window.location.href = "index.html";
         } else {
             alert(data.detail);
         }
-    });
+    })
+    .catch(err => console.log(err));
 });
