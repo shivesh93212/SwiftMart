@@ -59,7 +59,6 @@ class LoginModel(BaseModel):
     email: str
     password: str
 
-
 @app.post("/login")
 def login(data: LoginModel, session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.email == data.email)).first()
