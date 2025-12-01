@@ -11,12 +11,12 @@ const totalPriceText = document.querySelector(".cart-footer h3");
 let cart = [];
 let total = 0;
 
-
 // -------------------------------------------
-// ⭐ UPDATE LOGIN / LOGOUT BUTTON
+// ⭐ SHOW LOGIN / LOGOUT BUTTON BASED ON TOKEN
 // -------------------------------------------
-function updateAuthButtons() {
+document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("token");
+
     const loginBtn = document.querySelector("#login-btn");
     const logoutBtn = document.querySelector("#logout-btn");
 
@@ -27,55 +27,38 @@ function updateAuthButtons() {
         loginBtn.style.display = "inline-block";
         logoutBtn.style.display = "none";
     }
-}
-
-
-// -------------------------------------------
-// ⭐ PAGE LOAD
-// -------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-
-    updateAuthButtons();
-
-    loadProducts();
-
-    const user_id = localStorage.getItem("user_id");
-    if (user_id) loadCart(user_id);
 });
 
-
 // -------------------------------------------
-// ⭐ LOGIN BUTTON ACTION
+// ⭐ LOGIN BUTTON CLICK → open login page
 // -------------------------------------------
 document.querySelector("#login-btn").addEventListener("click", () => {
     window.location.href = "login.html";
 });
 
-
 // -------------------------------------------
-// ⭐ LOGOUT BUTTON ACTION (FIXED)
+// ⭐ LOGOUT BUTTON CLICK
 // -------------------------------------------
-document.querySelector("#logout-btn").addEventListener("click", () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_id");
+document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn = document.querySelector("#logout-btn");
 
-    alert("Logged out successfully!");
-
-    updateAuthButtons();
-    window.location.reload();
+    logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_id");
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+    });
 });
 
-
 // -------------------------------------------
-// ⭐ LOAD PRODUCTS
+// ⭐ LOAD PRODUCTS FROM BACKEND
 // -------------------------------------------
-function loadProducts() {
+document.addEventListener("DOMContentLoaded", () => {
     fetch("http://127.0.0.1:8000/products")
         .then(res => res.json())
         .then(data => displayProducts(data.products))
         .catch(err => console.log("Error loading products:", err));
-}
-
+});
 
 // -------------------------------------------
 // ⭐ DISPLAY PRODUCTS
@@ -92,6 +75,7 @@ function displayProducts(products) {
         <div class="box-img">
             <h3 id="name">${product.name}</h3>
             <img src="${product.image}">
+            <p id="wet">100g</p>
             <p id="price">Price-${product.price}</p>
             <button class="add-btn" data-id="${product.id}">Add</button>
         </div>
@@ -103,26 +87,24 @@ function displayProducts(products) {
     attachAddButtonEvents();
 }
 
-
 // -------------------------------------------
-// ⭐ ADD BUTTON CLICK EVENTS
+// ⭐ ADD BUTTON EVENT
 // -------------------------------------------
 function attachAddButtonEvents() {
     const addButtons = document.querySelectorAll(".add-btn");
 
     addButtons.forEach(btn => {
         btn.addEventListener("click", () => {
-            const user_id = localStorage.getItem("user_id");
             const product_id = btn.getAttribute("data-id");
+            const user_id = localStorage.getItem("user_id");
 
             addToCart(user_id, product_id);
         });
     });
 }
 
-
 // -------------------------------------------
-// ⭐ ADD TO CART (BACKEND)
+// ⭐ ADD TO CART
 // -------------------------------------------
 function addToCart(user_id, product_id) {
     if (!user_id) {
@@ -132,12 +114,13 @@ function addToCart(user_id, product_id) {
     }
 
     fetch(`http://127.0.0.1:8000/cart/add/${user_id}/${product_id}`, {
-        method: "POST"
+        method: "POST",
     })
     .then(res => res.json())
-    .then(() => loadCart(user_id));
+    .then(() => {
+        loadCart(user_id);
+    });
 }
-
 
 // -------------------------------------------
 // ⭐ LOAD CART FROM BACKEND
@@ -147,11 +130,10 @@ function loadCart(user_id) {
         .then(res => res.json())
         .then(data => {
             cart = data.cart;
-            total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
             updateCartUI();
         });
 }
-
 
 // -------------------------------------------
 // ⭐ UPDATE CART UI
@@ -168,18 +150,32 @@ function updateCartUI() {
 
     cart.forEach(item => {
         cartBody.innerHTML += `
-        <div class="cart-item">
-            <p>${item.name} - ₹${item.price} x ${item.quantity}</p>
-        </div>
+            <div class="cart-item">
+                <p>${item.name} - ₹${item.price} × ${item.quantity}</p>
+                <button class="remove-btn" onclick="removeItem(${item.product_id})">-</button>
+            </div>
         `;
     });
 
     totalPriceText.innerHTML = `Total: ₹${total}`;
 }
 
+// -------------------------------------------
+// ⭐ REMOVE ITEM
+// -------------------------------------------
+function removeItem(product_id) {
+    const user_id = localStorage.getItem("user_id");
+
+    fetch(`http://127.0.0.1:8000/cart/remove/${user_id}/${product_id}`, {
+        method: "DELETE"
+    })
+    .then(() => {
+        loadCart(user_id);
+    });
+}
 
 // -------------------------------------------
-// ⭐ CART MENU OPEN/CLOSE
+// ⭐ CART OPEN/CLOSE
 // -------------------------------------------
 cartIcon.addEventListener("click", () => {
     cartMenu.classList.add("cart-open");
@@ -188,7 +184,6 @@ cartIcon.addEventListener("click", () => {
 closeBtn.addEventListener("click", () => {
     cartMenu.classList.remove("cart-open");
 });
-
 
 // -------------------------------------------
 // ⭐ LIVE SEARCH

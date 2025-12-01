@@ -151,8 +151,14 @@ def remove_item(user_id: int, product_id: int, session: Session = Depends(get_se
         select(Cart).where(Cart.user_id == user_id, Cart.product_id == product_id)
     ).first()
 
-    if item:
+    if not item:
+        raise HTTPException(404," Item not found in cart")
+    
+    if(item.quantity>1):
+        item.quantity -=1
+        session.add(item)
+    else:
         session.delete(item)
-        session.commit()
+    session.commit()
 
     return {"message": "Item removed"}
