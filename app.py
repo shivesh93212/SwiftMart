@@ -19,8 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 @app.on_event("startup")
 def startup():
     create_db_and_tables()
@@ -92,8 +90,9 @@ def add_products(session: Session = Depends(get_session)):
         Product(name="Lays", price=55, image="img1.avif"),
         Product(name="Milk", price=40, image="img9.avif"),
         Product(name="Bread", price=45, image="img8.avif"),
+        Product(name="penuts",price=220,image="img5.avif"),
     ]
-
+    
     for p in items:
         session.add(p)
     session.commit()
