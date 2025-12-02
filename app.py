@@ -9,17 +9,20 @@ from models import User, Product, Cart
 from dotenv import load_dotenv
 import os
 
+# Load .env (works locally; Render uses environment variables directly)
 load_dotenv()
-SECRET_KEY: str = os.getenv("SECRET_KEY") or ""
-ALGORITHM: str = os.getenv("ALGORITHM") or ""
+
+SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+ALGORITHM: str = os.getenv("ALGORITHM", "")
 
 if not SECRET_KEY or not ALGORITHM:
-    raise ValueError("SECRET_KEY and ALGORITHM must be set in the .env file")
+    raise ValueError("SECRET_KEY and ALGORITHM must be set in Render Environment Variables!")
 
 app = FastAPI()
-#  DATABASE_URL = os.getenv()
-# database=Database(DATABASE_URL)
 
+# -------------------------------
+# CORS
+# -------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,15 +30,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# -------------------------------
+# DB STARTUP
+# -------------------------------
 @app.on_event("startup")
 def startup():
+    print("🚀 Starting up… creating tables if missing")
     create_db_and_tables()
 
 
+# -------------------------------
+# JWT TOKEN
+# -------------------------------
 def create_access_token(data: dict):
     expire = datetime.utcnow() + timedelta(hours=2)
     data.update({"exp": expire})
-    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    return token
 
 
 # -------------------------------
@@ -46,7 +58,6 @@ class SignupModel(BaseModel):
     email: str
     password: str
 
-
 @app.post("/signup")
 def signup(data: SignupModel, session: Session = Depends(get_session)):
     user_exists = session.exec(select(User).where(User.email == data.email)).first()
@@ -54,9 +65,15 @@ def signup(data: SignupModel, session: Session = Depends(get_session)):
     if user_exists:
         raise HTTPException(400, "User already exists")
 
-    user = User(name=data.name, email=data.email, password=data.password)
+    user = User(
+        name=data.name,
+        email=data.email,
+        password=data.password
+    )
+
     session.add(user)
     session.commit()
+
     return {"message": "Signup successful!"}
 
 
@@ -95,7 +112,6 @@ def get_products(session: Session = Depends(get_session)):
 def add_products(session: Session = Depends(get_session)):
     existing = session.exec(select(Product)).all()
 
-    # If already added → do not duplicate
     if existing:
         return {"message": "Products already exist!"}
 
@@ -104,20 +120,18 @@ def add_products(session: Session = Depends(get_session)):
         Product(name="Milk", price=40, image="img9.avif"),
         Product(name="Bread", price=45, image="img8.avif"),
         Product(name="Peanuts", price=220, image="img5.avif"),
-        Product(name="Butter",price=66, image="img10.avif"),
+        Product(name="Butter", price=66, image="img10.avif"),
     ]
 
     for p in items:
         session.add(p)
 
     session.commit()
-    return {"message": "Products added successfully!"}
-
-
+    return {"message": 'Products added successfully!'}
 
 
 # -------------------------------
-# CART: Add item
+# CART: Add Item
 # -------------------------------
 @app.post("/cart/add/{user_id}/{product_id}")
 def add_to_cart(user_id: int, product_id: int, session: Session = Depends(get_session)):
@@ -134,11 +148,11 @@ def add_to_cart(user_id: int, product_id: int, session: Session = Depends(get_se
         session.add(item)
 
     session.commit()
-    return {"message": "Item added"}
+    return {"message": "Item added to cart"}
 
 
 # -------------------------------
-# CART: Get User Cart
+# CART: Get Items
 # -------------------------------
 @app.get("/cart/{user_id}")
 def get_cart(user_id: int, session: Session = Depends(get_session)):
@@ -160,7 +174,7 @@ def get_cart(user_id: int, session: Session = Depends(get_session)):
 
 
 # -------------------------------
-# CART REMOVE
+# CART: Remove Item
 # -------------------------------
 @app.delete("/cart/remove/{user_id}/{product_id}")
 def remove_item(user_id: int, product_id: int, session: Session = Depends(get_session)):
@@ -169,14 +183,13 @@ def remove_item(user_id: int, product_id: int, session: Session = Depends(get_se
     ).first()
 
     if not item:
-        raise HTTPException(404," Item not found in cart")
-    
-    if(item.quantity>1):
-        item.quantity -=1
+        raise HTTPException(404, "Item not found in cart")
+
+    if item.quantity > 1:
+        item.quantity -= 1
         session.add(item)
     else:
         session.delete(item)
+
     session.commit()
-
     return {"message": "Item removed"}
-
