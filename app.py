@@ -6,11 +6,19 @@ from datetime import datetime, timedelta
 from jose import jwt
 from database import create_db_and_tables, get_session
 from models import User, Product, Cart
+from dotenv import load_dotenv
+import os
 
-SECRET_KEY = "mysecretkey123"
-ALGORITHM = "HS256"
+load_dotenv()
+SECRET_KEY: str = os.getenv("SECRET_KEY") or ""
+ALGORITHM: str = os.getenv("ALGORITHM") or ""
+
+if not SECRET_KEY or not ALGORITHM:
+    raise ValueError("SECRET_KEY and ALGORITHM must be set in the .env file")
 
 app = FastAPI()
+#  DATABASE_URL = os.getenv()
+# database=Database(DATABASE_URL)
 
 app.add_middleware(
     CORSMiddleware,

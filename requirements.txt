@@ -1,7 +1,8 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlmodel
 psycopg2-binary
 python-jose
 python-multipart
 pydantic
+python-dotenv

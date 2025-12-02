@@ -1,7 +1,7 @@
-
+import os
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "postgresql://postgres:shivesh%402006@localhost:5432/testdb"
+DATABASE_URL = os.getenv("DATABASE_URL") or ""
 
 engine = create_engine(DATABASE_URL, echo=True)
 
